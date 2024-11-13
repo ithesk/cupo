@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Heredar vista de configuración POS -->
+        <record id="view_pos_config_form_inherit_coupon" model="ir.ui.view">
+            <field name="name">pos.config.form.inherit.coupon</field>
+            <field name="model">pos.config</field>
+            <field name="inherit_id" ref="point_of_sale.pos_config_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//div[@id='payment']" position="after">
+                    <h2>Configuración de Cupones</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="discount_product_id"/>
+                                <div class="text-muted">
+                                    Producto usado para aplicar descuentos de cupones
+                                </div>
+                                <div class="content-group mt16">
+                                    <field name="discount_product_id"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

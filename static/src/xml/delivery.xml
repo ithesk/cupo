@@ -1,7 +1,0 @@
-<templates>
-    <t t-extend="ReceiptScreenWidget">
-        <t t-jquery=".button.print" t-operation="after">
-            <button class="button send-entregado">Marca Entregado</button>
-        </t>
-    </t>
-</templates>

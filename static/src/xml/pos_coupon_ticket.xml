@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template">
+    <t t-extend="PosTicket">
+        <t t-jquery=".receipt-change" t-operation="after">
+            <t t-if="receipt.generated_coupon">
+                <t t-set="show_coupon" t-value="true"/>
+                <t t-log="'Datos del cupón en el recibo:'" t-value="receipt.generated_coupon"/>
+                <div class="pos-receipt-separator"/>
+                <div style="text-align: center;">
+                    <div>********************************</div>
+                    <div style="font-weight: bold;">¡FELICIDADES!</div>
+                    <div>Has ganado un cupón de descuento</div>
+                    <div style="font-size: 1.5em; margin: 10px 0;">
+                        Código: <t t-esc="receipt.generated_coupon.code"/>
+                    </div>
+                    <div>Valor del cupón: RD$ <t t-esc="receipt.generated_coupon.amount"/></div>
+                    <div>Válido para tu próxima compra en:</div>
+                    <div>- Servicios</div>
+                    <div>- Accesorios</div>
+                    <div>********************************</div>
+                </div>
+            </t>
+            <t t-else="">
+                <t t-log="'No hay datos de cupón para mostrar'"/>
+            </t>
+        </t>
+    </t>
+</templates>

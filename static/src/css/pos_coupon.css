@@ -1,0 +1,17 @@
+.pos .coupon-button {
+    background: #7f82ac !important;
+}
+
+.pos .coupon-button:hover {
+    background: #6b6ea3 !important;
+}
+
+.pos .coupon-line {
+    background-color: #e8f4f8;
+}
+
+.pos-receipt-coupon {
+    text-align: center;
+    font-size: 1.2em;
+    margin: 10px 0;
+}

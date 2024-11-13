@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+         <!-- Heredar vista de configuración POS (Versión alternativa) -->
+         <record id="view_pos_config_form_inherit_coupon" model="ir.ui.view">
+            <field name="name">pos.config.form.inherit.coupon</field>
+            <field name="model">pos.config</field>
+            <field name="inherit_id" ref="point_of_sale.pos_config_view_form"/>
+            <field name="arch" type="xml">
+                <sheet position="inside">
+                    <separator string="Configuración de Cupones"/>
+                    <group name="coupon_config">
+                        <field name="discount_product_id"/>
+                    </group>
+                </sheet>
+            </field>
+        </record>
+
+        <!-- Resto de tus vistas (pos.coupon form, tree, etc.) -->
+        <record id="view_pos_coupon_form" model="ir.ui.view">
+            <field name="name">pos.coupon.form</field>
+            <field name="model">pos.coupon</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                        <field name="state" widget="statusbar" statusbar_visible="valid,used,expired"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" readonly="1"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="amount"/>
+                                <field name="creation_date"/>
+                            </group>
+                            <group>
+                                <field name="order_id"/>
+                                <field name="used_in_order"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="view_pos_coupon_tree" model="ir.ui.view">
+            <field name="name">pos.coupon.tree</field>
+            <field name="model">pos.coupon</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="amount"/>
+                    <field name="state"/>
+                    <field name="creation_date"/>
+                    <field name="order_id"/>
+                    <field name="used_in_order"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Acción para cupones -->
+        <record id="action_pos_coupon" model="ir.actions.act_window">
+            <field name="name">Cupones POS</field>
+            <field name="res_model">pos.coupon</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Crear el primer cupón
+                </p>
+            </field>
+        </record>
+
+        <!-- Menús -->
+        <menuitem 
+            id="menu_pos_coupon"
+            name="Cupones"
+            parent="point_of_sale.menu_point_of_sale"
+            action="action_pos_coupon"
+            sequence="20"/>
+    </data>
+</odoo>

@@ -1,6 +1,7 @@
-/* Asegúrate de que el selector sea lo suficientemente específico */
-div.pos .send-entregado {
-    background-color: rgb(14, 72, 244) !important;
+/* Asegúrate de que el s
+elector sea lo suficientemente específico */
+div.pos .esperar-comprobante {
+    background-color: rgb(17, 207, 175) !important;
     color: white !important;
     border: none !important;
     padding: 10px 20px !important;
@@ -14,6 +15,36 @@ div.pos .send-entregado {
     display: block !important; /* Para centrar el botón */
 }
 
-div.pos .send-entregado:hover {
-    background-color: rgb(83, 105, 245) !important;
+div.pos .esperar-comprobante:hover {
+    background-color: rgb(11, 141, 109) !important;
+}
+
+#lottie-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 350px;  /* Ajusta el tamaño deseado */
+    height: 350px;
+    z-index: 9999;
+}
+
+.popup-content {
+    max-height: 400px; /* Define una altura máxima */
+    overflow-y: auto;  /* Agrega barra de desplazamiento vertical si el contenido excede la altura */
+    word-wrap: break-word; /* Asegura que el texto se ajuste dentro del contenedor */
+    padding: 10px;
+}
+
+
+/* Overlay que cubre toda la pantalla */
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Gris con opacidad del 50% */
+    z-index: 999; /* Asegura que esté en frente de otros elementos */
+    display: none; /* Oculto por defecto */
 }

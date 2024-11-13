@@ -1,0 +1,13 @@
+<odoo>
+    <template id="CuponNumberPopupWidget" name="Repair Number Popup">
+        <div class="popup popup-confirm">
+            <t t-name="CouponButton">
+                <div class='control-button'>
+                    <i class='fa fa-ticket'></i>
+                    <span>Cupón</span>
+                </div>
+            </t>
+            </div>
+        </div>
+    </template>
+</odoo>

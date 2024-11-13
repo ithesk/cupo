@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Acción para abrir la vista de cupones -->
+    <record id="action_pos_coupon" model="ir.actions.act_window">
+        <field name="name">Cupones POS</field>
+        <field name="res_model">pos.coupon</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear el primer cupón
+            </p>
+        </field>
+    </record>
+
+    <!-- Menú para acceder a los cupones -->
+    <menuitem 
+        id="menu_pos_coupon"
+        name="Cupones"
+        parent="point_of_sale.menu_point_of_sale"
+        action="action_pos_coupon"
+        sequence="20"/>
+
+    <!-- Menú adicional en Configuración -->
+    <menuitem 
+        id="menu_pos_coupon_config"
+        name="Cupones"
+        parent="point_of_sale.menu_point_config_product"
+        action="action_pos_coupon"
+        sequence="30"/>
+</odoo>

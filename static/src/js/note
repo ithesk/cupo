@@ -1,0 +1,26 @@
+python3 /opt/odoo/odoo-bin shell -d nfcithesk -c /etc/odoo/odoo.conf
+
+# En el shell de Odoo
+product = env['product.product'].browse(2253)
+print(f"""
+Configuración del producto:
+- Nombre: {product.name}
+- Disponible en POS: {product.available_in_pos}
+- Tipo: {product.type}
+- ID Plantilla: {product.product_tmpl_id.id}
+""")
+
+
+discount_product = env['product.product'].create({
+    'name': 'Descuento Cupón',
+    'type': 'service',
+    'list_price': 0.0,
+    'sale_ok': True,
+    'available_in_pos': True,
+})
+
+
+# Configurar en el POS
+pos_config = env['pos.config'].search([], limit=1)
+pos_config.write({'discount_product_id': discount_product.id})
+env.cr.commit()

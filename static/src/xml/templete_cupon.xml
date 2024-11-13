@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="CouponButton">
+        <div class='control-button js_coupon_button'>
+            <i class='fa fa-ticket'></i>
+            <span>Cupón</span>
+        </div>
+    </t>
+
+    <t t-extend="PosTicket">
+        <t t-jquery='.pos-receipt-order-data' t-operation="after">
+            <t t-if="order.generated_coupon_id">
+                <br/>
+                <div class="pos-receipt-coupon">
+                    <div>********************************</div>
+                    <div>¡FELICIDADES!</div>
+                    <div>Has ganado un cupón de descuento</div>
+                    <div>Código: <t t-esc="order.generated_coupon_id"/></div>
+                    <div>********************************</div>
+                </div>
+            </t>
+        </t>
+    </t>
+</templates>
