@@ -15,6 +15,7 @@
     "data": [
           
           'views/menu.xml',
+          'views/menu1.xml',
         # 'views/assent.xml',  
         # 'views/upload.xml', 
         # 'views/error.xml', 

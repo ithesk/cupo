@@ -193,37 +193,65 @@ odoo.define('pos_coupon.screens', function(require) {
         _getEligibleAmount: function(order) {
             var self = this;
             var total = 0;
-            var eligiblePosCategories = ['Servicios', 'Accesorios'];
-            var eligibleGeneralCategories = ['servicios', 'accesorios'];
-            
+        
+            // Función auxiliar para calcular monto según escala
+            function calculateScaleAmount(amount, scale) {
+                if (scale && amount >= scale.min_amount) {
+                    return amount * (scale.percentage / 100);
+                }
+                return 0;
+            }
+        
             order.get_orderlines().forEach(function(line) {
                 var product = line.product;
-                console.log('Verificando línea:', product.display_name);
+                var lineTotal = line.get_price_with_tax();
                 
-                // Verificar categoría POS
-                var isPosEligible = product.pos_categ_id && 
-                    eligiblePosCategories.includes(product.pos_categ_id[1]);
-                
-                // Verificar categoría general
-                var isGeneralEligible = self._checkGeneralCategory(product);
-                
-                console.log('Elegibilidad:', {
+                console.log('Verificando línea:', {
                     producto: product.display_name,
-                    pos_category: product.pos_categ_id ? product.pos_categ_id[1] : 'Sin categoría POS',
-                    general_category: product.categ_id ? product.categ_id[1] : 'Sin categoría general',
-                    isPosEligible: isPosEligible,
-                    isGeneralEligible: isGeneralEligible
+                    monto: lineTotal
                 });
-                
-                // La línea es elegible si cumple con cualquiera de las dos condiciones
-                if (isPosEligible || isGeneralEligible) {
-                    var lineTotal = line.get_price_with_tax();
-                    console.log('Línea elegible, monto:', lineTotal);
-                    total += lineTotal;
+        
+                // Buscar escala aplicable
+                var scaleResult = null;
+                if (product.categ_id) {
+                    scaleResult = self.pos.findApplicableScale(product.categ_id[0]);
+                }
+        
+                // Obtener información de categorías para logging
+                var categoryInfo = {
+                    category_name: product.categ_id ? 
+                        self.pos.product_categories_by_id[product.categ_id[0]]?.full_name : 
+                        'Sin categoría',
+                    scale_found: scaleResult ? 
+                        `${scaleResult.scale.percentage}%` : 
+                        'No encontrada'
+                };
+        
+                console.log('Información de categoría:', categoryInfo);
+        
+                // Calcular monto solo si hay una escala configurada
+                if (scaleResult) {
+                    var scaleAmount = calculateScaleAmount(lineTotal, scaleResult.scale);
+                    if (scaleAmount > 0) {
+                        total += scaleAmount;
+                        console.log('Aplicando escala:', {
+                            categoria: categoryInfo.category_name,
+                            porcentaje: scaleResult.scale.percentage,
+                            monto_original: lineTotal,
+                            monto_descuento: scaleAmount
+                        });
+                    }
+                } else {
+                    console.log('Línea no elegible: No se encontró escala configurada para', 
+                        categoryInfo.category_name);
                 }
             });
-            
-            console.log('Total elegible:', total);
+        
+            console.log('Resultado final:', {
+                total_descuento: total,
+                desglose: 'Ver detalles arriba'
+            });
+        
             return total;
         }
     });

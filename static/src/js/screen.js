@@ -18,20 +18,110 @@ odoo.define('pos_coupon.models', function (require) {
         'categ_id'
     ]);
     
-     // Cargar el modelo de categorías de producto
-     models.load_models([{
-        model: 'product.category',
-        fields: ['name', 'parent_id'],
-        domain: null,
-        loaded: function(self, categories) {
-            self.product_categories = categories;
-            // Crear un mapa de categorías por ID para búsqueda rápida
-            self.product_categories_by_id = {};
-            categories.forEach(function(category) {
-                self.product_categories_by_id[category.id] = category;
-            });
+    // Cargar los modelos necesarios
+    models.load_models([
+        {
+            model: 'product.category',
+            fields: ['name', 'parent_id', 'complete_name'],
+            domain: null,
+            loaded: function(self, categories) {
+                self.product_categories = categories;
+                // Crear un mapa de categorías por ID para búsqueda rápida
+                self.product_categories_by_id = {};
+                
+                // Función para obtener la ruta completa de una categoría
+                function getCategoryPath(category) {
+                    let path = [category.name];
+                    let current = category;
+                    
+                    while (current.parent_id) {
+                        const parent = categories.find(cat => cat.id === current.parent_id[0]);
+                        if (parent) {
+                            path.unshift(parent.name);
+                            current = parent;
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    return path;
+                }
+
+                // Procesar cada categoría
+                categories.forEach(function(category) {
+                    // Añadir al mapa de búsqueda
+                    self.product_categories_by_id[category.id] = category;
+                    
+                    // Añadir información adicional útil
+                    category.path = getCategoryPath(category);
+                    category.full_name = category.path.join(' / ');
+                    
+                    // Añadir referencia a hijos directos
+                    category.child_ids = categories
+                        .filter(cat => cat.parent_id && cat.parent_id[0] === category.id)
+                        .map(cat => cat.id);
+                    
+                    console.log('Categoría procesada:', {
+                        id: category.id,
+                        name: category.name,
+                        path: category.path,
+                        full_name: category.full_name,
+                        children: category.child_ids
+                    });
+                });
+            }
+        },
+        {
+            model: 'pos.coupon.scale',
+            fields: [
+                'category_id',
+                'percentage',
+                'min_amount',
+                'active',
+                'apply_to_subcategories'
+            ],
+            domain: [['active', '=', true]],
+            loaded: function(self, scales) {
+                self.coupon_scales = scales;
+                
+                // Crear mapa de escalas por categoría
+                self.coupon_scales_by_category = {};
+                scales.forEach(function(scale) {
+                    self.coupon_scales_by_category[scale.category_id[0]] = scale;
+                });
+
+                // Función auxiliar para encontrar escala aplicable
+                self.findApplicableScale = function(categoryId) {
+                    let currentCategoryId = categoryId;
+                    
+                    while (currentCategoryId) {
+                        // Buscar escala directa
+                        const scale = this.coupon_scales_by_category[currentCategoryId];
+                        if (scale) {
+                            return {
+                                scale: scale,
+                                applied_category_id: currentCategoryId
+                            };
+                        }
+                        
+                        // Buscar en categoría padre
+                        const category = this.product_categories_by_id[currentCategoryId];
+                        currentCategoryId = category && category.parent_id ? category.parent_id[0] : null;
+                    }
+                    
+                    return null;
+                };
+
+                console.log('Escalas de cupones cargadas:', {
+                    total_scales: scales.length,
+                    scales_by_category: Object.keys(self.coupon_scales_by_category).map(catId => ({
+                        category: self.product_categories_by_id[catId]?.name,
+                        percentage: self.coupon_scales_by_category[catId].percentage
+                    }))
+                });
+            }
         }
-    }]);
+    ]);
 
     // Extender el modelo POS base
     var _super_posmodel = models.PosModel.prototype;

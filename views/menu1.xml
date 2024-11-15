@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Vista de formulario -->
+    <record id="view_pos_coupon_scale_form" model="ir.ui.view">
+        <field name="name">pos.coupon.scale.form</field>
+        <field name="model">pos.coupon.scale</field>
+        <field name="arch" type="xml">
+            <form string="Escala de Cupones">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="category_id" options="{'no_create': True}"/>
+                            <field name="percentage"/>
+                            <field name="min_amount"/>
+                        </group>
+                        <group>
+                            <field name="active"/>
+                            <field name="apply_to_subcategories"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de árbol/lista -->
+    <record id="view_pos_coupon_scale_tree" model="ir.ui.view">
+        <field name="name">pos.coupon.scale.tree</field>
+        <field name="model">pos.coupon.scale</field>
+        <field name="arch" type="xml">
+            <tree string="Escalas de Cupones" editable="bottom">
+                <field name="category_id" options="{'no_create': True}"/>
+                <field name="percentage"/>
+                <field name="min_amount"/>
+                <field name="active"/>
+                <field name="apply_to_subcategories"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista de búsqueda -->
+    <record id="view_pos_coupon_scale_search" model="ir.ui.view">
+        <field name="name">pos.coupon.scale.search</field>
+        <field name="model">pos.coupon.scale</field>
+        <field name="arch" type="xml">
+            <search string="Escalas de Cupones">
+                <field name="category_id"/>
+                <filter string="Activas" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Inactivas" name="inactive" domain="[('active', '=', False)]"/>
+                <group expand="0" string="Agrupar Por">
+                    <filter string="Categoría" name="category" context="{'group_by': 'category_id'}"/>
+                    <filter string="Porcentaje" name="percentage" context="{'group_by': 'percentage'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción del menú -->
+    <record id="action_pos_coupon_scale" model="ir.actions.act_window">
+        <field name="name">Escalas de Cupones</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">pos.coupon.scale</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_pos_coupon_scale_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configura las escalas de cupones para diferentes categorías
+            </p>
+            <p>
+                Define el porcentaje de descuento para cada categoría de productos.
+                Por ejemplo: Servicios 7%, Accesorios 7%, Pantallas 1%, etc.
+            </p>
+        </field>
+    </record>
+
+    <!-- Elemento del menú -->
+    <menuitem id="menu_pos_coupon_scale"
+              name="Escalas de Cupones"
+              parent="point_of_sale.menu_point_config_product"
+              action="action_pos_coupon_scale"
+              sequence="40"/>
+
+      <!-- Menú para acceder a los cupones -->
+    <menuitem 
+      id="menu_pos_coupon_pos"
+      name="Cupones escala"
+      parent="point_of_sale.menu_point_of_sale"
+      action="action_pos_coupon_scale"
+      sequence="50"/>
+
+</odoo>

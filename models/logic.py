@@ -9,6 +9,73 @@ from datetime import timedelta  # Importar timedelta
 
 _logger = logging.getLogger(__name__)
 
+class POSCouponScale(models.Model):
+    _name = 'pos.coupon.scale'
+    _description = 'Escalas de Cupones POS'
+    _order = 'category_id'
+
+    category_id = fields.Many2one(
+        'product.category',
+        string='Categoría',
+        required=True,
+        index=True
+    )
+    percentage = fields.Float(
+        'Porcentaje',
+        required=True,
+        help='Porcentaje de descuento para esta categoría'
+    )
+    min_amount = fields.Float(
+        'Monto Mínimo',
+        required=True,
+        default=1000.0,
+        help='Monto mínimo de compra para generar cupón'
+    )
+    active = fields.Boolean(
+        'Activo',
+        default=True,
+        help='Desactiva para pausar la generación de cupones para esta categoría'
+    )
+    apply_to_subcategories = fields.Boolean(
+        'Aplicar a Subcategorías',
+        default=True,
+        help='Si está marcado, el porcentaje se aplicará también a todas las subcategorías'
+    )
+    category_complete_name = fields.Char(
+        'Categoría Completa',
+        related='category_id.complete_name',
+        readonly=True,
+        store=True
+    )
+
+    _sql_constraints = [
+        ('unique_category',
+         'unique(category_id)',
+         'Ya existe una configuración para esta categoría'),
+        ('percentage_range',
+         'CHECK(percentage >= 0 AND percentage <= 100)',
+         'El porcentaje debe estar entre 0 y 100')
+    ]
+
+    @api.constrains('percentage')
+    def _check_percentage(self):
+        for record in self:
+            if record.percentage < 0 or record.percentage > 100:
+                raise ValidationError('El porcentaje debe estar entre 0 y 100')
+
+    @api.model
+    def create(self, vals):
+        # Redondear el porcentaje a 2 decimales
+        if 'percentage' in vals:
+            vals['percentage'] = round(vals['percentage'], 2)
+        return super(POSCouponScale, self).create(vals)
+
+    def write(self, vals):
+        # Redondear el porcentaje a 2 decimales
+        if 'percentage' in vals:
+            vals['percentage'] = round(vals['percentage'], 2)
+        return super(POSCouponScale, self).write(vals)
+
 class POSConfig(models.Model):
     _inherit = 'pos.config'
 
@@ -260,7 +327,7 @@ class POSOrder(models.Model):
                 if order.amount_total >= 1000 and not order.applied_coupon_id and eligible:
                     _logger.info('7. La orden %s califica para cupón', order.name)
                     
-                    coupon_amount = order.amount_total * 0.07
+                    coupon_amount = self._calculate_coupon_amount(order)
                     _logger.info('8. Monto calculado para cupón: %s', coupon_amount)
                     
                     coupon = self.env['pos.coupon'].create({
@@ -374,54 +441,87 @@ class POSOrder(models.Model):
 
 
     def _check_products_eligible(self, order):
-        """Verifica si los productos en la orden pertenecen a las categorías elegibles o sus subcategorías"""
+        """Verifica si los productos en la orden son elegibles según las escalas configuradas"""
         _logger.info('Verificando elegibilidad de productos para orden %s', order.id)
         
-        # Lista de categorías elegibles (nombres en minúsculas para comparación)
-        eligible_categories = ['servicios', 'accesorios']
+        # Obtener escalas activas
+        scales = self.env['pos.coupon.scale'].search([('active', '=', True)])
         
-        def check_category_hierarchy(category):
-            """Verifica la jerarquía completa de categorías"""
-            if not category:
-                return False
-                
-            # Verificar la categoría actual
-            if category.name.lower() in eligible_categories:
-                return True
-                
-            # Verificar categoría padre si existe
-            if category.parent_id:
-                return check_category_hierarchy(category.parent_id)
-                
+        if not scales:
             return False
         
+        def get_applicable_scale(category):
+            """
+            Busca la escala aplicable subiendo por la jerarquía de categorías
+            Retorna: (scale, category_found)
+            """
+            current_category = category
+            while current_category:
+                scale = scales.filtered(lambda s: s.category_id.id == current_category.id)
+                if scale:
+                    return scale, current_category
+                current_category = current_category.parent_id
+            return False, False
+
+        # Verificar cada línea
         for line in order.lines:
             product = line.product_id
             category = product.categ_id
             
-            # Obtener la ruta completa de categorías para el logging
+            # Obtener la ruta de categorías para logging
             category_path = []
+            current_cat = category
+            while current_cat:
+                category_path.insert(0, current_cat.name)
+                current_cat = current_cat.parent_id
+            
+            _logger.info('Verificando producto: %s, Jerarquía de categorías: %s',
+                        product.name, ' -> '.join(category_path))
+            
+            # Buscar escala aplicable
+            scale, found_category = get_applicable_scale(category)
+            
+            if not scale:
+                _logger.info('Producto no elegible: %s (No se encontró escala aplicable)',
+                            product.name)
+                return False
+            
+            _logger.info('Escala encontrada para %s: %s%% en categoría %s',
+                        product.name, scale.percentage, found_category.name)
+        
+        return True
+    
+    def _calculate_coupon_amount(self, order):
+        """Calcula el monto del cupón basado en las escalas configuradas"""
+        total_amount = 0
+        scales = self.env['pos.coupon.scale'].search([('active', '=', True)])
+        
+        # Agrupar líneas por categoría
+        category_totals = {}
+        
+        for line in order.lines:
+            product = line.product_id
+            category = product.categ_id
+            line_amount = line.price_subtotal_incl
+            
+            # Encontrar la escala aplicable (considerando categorías padre)
             current_category = category
             while current_category:
-                category_path.insert(0, current_category.name)
+                scale = scales.filtered(lambda s: s.category_id.id == current_category.id)
+                if scale:
+                    category_id = current_category.id
+                    if category_id not in category_totals:
+                        category_totals[category_id] = {
+                            'amount': 0,
+                            'scale': scale
+                        }
+                    category_totals[category_id]['amount'] += line_amount
+                    break
                 current_category = current_category.parent_id
-            
-            category_string = ' / '.join(category_path) if category_path else 'Sin categoría'
-            
-            _logger.info('Verificando producto: %s, Ruta de categorías: %s',
-                        product.name, category_string)
-            
-            # Verificar si el producto es elegible
-            is_eligible = check_category_hierarchy(category)
-            
-            if not is_eligible:
-                _logger.info('Producto no elegible encontrado: %s (Categorías: %s)',
-                            product.name, category_string)
-                return False
-                
-            _logger.info('Producto elegible: %s', product.name)
         
-        _logger.info('Todos los productos son elegibles')
-        return True
-
-  
+        # Calcular el monto del cupón por cada categoría
+        for category_id, data in category_totals.items():
+            if data['amount'] >= data['scale'].min_amount:
+                total_amount += data['amount'] * (data['scale'].percentage / 100)
+        
+        return total_amount
